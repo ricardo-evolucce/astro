@@ -27,11 +27,14 @@ use App\Http\Controllers\AnimalController;
 use App\Http\Controllers\ClienteController;
 use App\Http\Controllers\AtendimentoController;
 use App\Http\Controllers\CaixasController;
-
-            
+use App\Http\Controllers\UserController;
 
 Route::get('/', function () {return redirect('sign-in');})->middleware('guest');
-Route::get('/dashboard', [DashboardController::class, 'index'])->middleware('auth')->name('dashboard');
+
+
+
+
+
 Route::get('sign-up', [RegisterController::class, 'create'])->middleware('guest')->name('register');
 Route::post('sign-up', [RegisterController::class, 'store'])->middleware('guest');
 Route::get('sign-in', [SessionsController::class, 'create'])->middleware('guest')->name('login');
@@ -45,69 +48,77 @@ Route::get('/reset-password/{token}', function ($token) {
 	return view('sessions.password.reset', ['token' => $token]);
 })->middleware('guest')->name('password.reset');
 
-Route::post('sign-out', [SessionsController::class, 'destroy'])->middleware('auth')->name('logout');
-Route::get('profile', [ProfileController::class, 'create'])->middleware('auth')->name('profile');
-
-
 
 
 Route::resource('clientes.animals.atendimentos', AtendimentoController::class)->shallow();
-
 Route::resource('clientes.animals', AnimalController::class)->shallow();
 
-Route::resource('animals', AnimalController::class)
-	->only(['index', 'create', 'store', 'edit', 'update', 'destroy', 'show'])
-	->middleware(['auth', 'verified'])
-	->name('*', 'animals');
 
 
+Route::group(['middleware' => ['auth', 'role:admin|veterinary|bather|groomer']], function () {
+	
+	Route::get('/home', function(){
+		return redirect("/dashboard");
+	});
+	Route::get('/dashboard', [DashboardController::class, 'index'])->middleware('auth')->name('dashboard');
+
+	Route::post('sign-out', [SessionsController::class, 'destroy'])->middleware('auth')->name('logout');
+	Route::get('profile', [ProfileController::class, 'create'])->middleware('auth')->name('profile');
+
+	Route::resource('animals', AnimalController::class)
+		->only(['index', 'create', 'store', 'edit', 'update', 'destroy', 'show'])
+		->middleware(['auth', 'verified'])
+		->name('*', 'animals');
 
 
-Route::resource('clientes', ClienteController::class)
-	->only(['index', 'create', 'store', 'edit', 'update', 'destroy', 'show'])
-	->middleware(['auth', 'verified'])
-	->name('*', 'clientes');
+	Route::resource('clientes', ClienteController::class)
+		->only(['index', 'create', 'store', 'edit', 'update', 'destroy', 'show'])
+		->middleware(['auth', 'verified'])
+		->name('*', 'clientes');
 
 
-Route::resource('atendimentos', AtendimentoController::class)
-	->only(['index', 'create', 'store', 'edit', 'update', 'destroy', 'show'])
-	->middleware(['auth', 'verified'])
-	->name('*', 'atendimentos');
+	Route::resource('users', UserController::class)
+		->only(['index', 'create', 'store', 'edit', 'update', 'destroy', 'show'])
+		->middleware(['auth', 'verified'])
+		->name('*', 'users');
 
 
+	Route::resource('atendimentos', AtendimentoController::class)
+		->only(['index', 'create', 'store', 'edit', 'update', 'destroy', 'show'])
+		->middleware(['auth', 'verified'])
+		->name('*', 'atendimentos');
 
 
+	Route::get('caixa', [CaixasController::class, 'caixa'])->middleware('auth')->name('caixa');
+	Route::post('user-profile', [ProfileController::class, 'update'])->middleware('auth');
+	Route::group(['middleware' => 'auth'], function () {
+		Route::get('billing', function () {
+			return view('pages.billing');
+		})->name('billing');
+		Route::get('tables', function () {
+			return view('pages.tables');
+		})->name('tables');
+		Route::get('rtl', function () {
+			return view('pages.rtl');
+		})->name('rtl');
+		Route::get('virtual-reality', function () {
+			return view('pages.virtual-reality');
+		})->name('virtual-reality');
+		Route::get('notifications', function () {
+			return view('pages.notifications');
+		})->name('notifications');
+		Route::get('static-sign-in', function () {
+			return view('pages.static-sign-in');
+		})->name('static-sign-in');
+		Route::get('static-sign-up', function () {
+			return view('pages.static-sign-up');
+		})->name('static-sign-up');
+		Route::get('user-management', function () {
+			return view('pages.laravel-examples.user-management');
+		})->name('user-management');
+		Route::get('user-profile', function () {
+			return view('pages.laravel-examples.user-profile');
+		})->name('user-profile');
+	});
 
-
-
-Route::get('caixa', [CaixasController::class, 'caixa'])->middleware('auth')->name('caixa');
-Route::post('user-profile', [ProfileController::class, 'update'])->middleware('auth');
-Route::group(['middleware' => 'auth'], function () {
-	Route::get('billing', function () {
-		return view('pages.billing');
-	})->name('billing');
-	Route::get('tables', function () {
-		return view('pages.tables');
-	})->name('tables');
-	Route::get('rtl', function () {
-		return view('pages.rtl');
-	})->name('rtl');
-	Route::get('virtual-reality', function () {
-		return view('pages.virtual-reality');
-	})->name('virtual-reality');
-	Route::get('notifications', function () {
-		return view('pages.notifications');
-	})->name('notifications');
-	Route::get('static-sign-in', function () {
-		return view('pages.static-sign-in');
-	})->name('static-sign-in');
-	Route::get('static-sign-up', function () {
-		return view('pages.static-sign-up');
-	})->name('static-sign-up');
-	Route::get('user-management', function () {
-		return view('pages.laravel-examples.user-management');
-	})->name('user-management');
-	Route::get('user-profile', function () {
-		return view('pages.laravel-examples.user-profile');
-	})->name('user-profile');
 });
